@@ -72,9 +72,7 @@ public class ScheduleTaskFixedRate {
         applianceList.forEach(element -> {
             if (Objects.equals(element.getId(), applianceId)) {
                 element.setStandby(standby);
-                if(standby) {
-                    sendNotificationStandbyAppliance(applianceId, false);
-                }
+
             }
         });
     }
@@ -89,15 +87,19 @@ public class ScheduleTaskFixedRate {
             }
         });
     }
-    public void sendNotificationStandbyAppliance(Long applianceId, Boolean off) {
-        final String uri = "http://localhost:8081/api/appliance/" + applianceId + "/standby?off=" + off;
+    public void sendNotificationStandbyAppliance(Long applianceId) {
+        final String uri = "http://localhost:8081/api/appliance/" + applianceId + "/standby";
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<?> responseEntity = restTemplate.getForEntity(uri, Object.class);
-        if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            log.info("send notification to server");
+        try {
+            ResponseEntity<?> responseEntity = restTemplate.getForEntity(uri, Object.class);
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                log.info("send notification to server");
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
         }
     }
-
     @Scheduled(fixedRate = 1000)
     public void reportCurrentTime() {
         MessageConsumption messageConsumption = new MessageConsumption();
@@ -115,7 +117,7 @@ public class ScheduleTaskFixedRate {
                         .build());
                 if (value.getStandby() && value.getAutoOff()) {
                     changeStatusAppliance(value.getId(), false);
-                    sendNotificationStandbyAppliance(value.getId(), true);
+                    sendNotificationStandbyAppliance(value.getId());
                 }
             }
         });
